@@ -1,51 +1,4 @@
-#!/usr/bin/env python3
-"""
-score_identity.py
-=================
-Numerical verification of the exact score identity between product-limit
-tail completion and inverse-probability-of-censoring weighting (IPCW)
-under right censoring.
 
-Reference
----------
-Yilmaz, E. (2026). Product-limit tail completion induces inverse-probability
-weighting under right censoring. Stat (to appear).
-
-Description
------------
-For a parametric event-time model without covariates, in the absence of ties,
-and when the largest observed time is an event, the completion-induced score
-
-    U_comp(theta) = sum_i E[ phi(T_i^*; theta) | D_n ]
-
-is exactly equal to the classical IPCW score
-
-    U_IPCW(theta) = sum_i (delta_i / G_hat(Y_i^-)) phi(Y_i; theta).
-
-This script:
-  1. Implements both scores from scratch for the exponential model.
-  2. Generates right-censored data and verifies the identity numerically.
-  3. Produces three publication-quality figures:
-     - Figure 1 (left):  U_comp and U_IPCW overlaid as functions of theta.
-     - Figure 1 (right): Their difference Delta(theta) at machine precision.
-     - Figure 2:         Histogram of |theta_comp - theta_IPCW| across
-                         500 Monte Carlo replications.
-
-Usage
------
-    python score_identity.py
-
-Output
-------
-    fig1_scores.pdf / .png   -- Score curves and their difference (two panels)
-    fig2_mc_roots.pdf / .png -- Monte Carlo root-difference histogram
-
-Dependencies
-------------
-    numpy, scipy, matplotlib  (standard scientific Python stack)
-
-Author: Ersin Yilmaz, Mugla Sitki Kocman University
-"""
 
 import numpy as np
 from scipy.optimize import brentq
@@ -54,9 +7,6 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 from matplotlib.ticker import MaxNLocator
 
-# ---------------------------------------------------------------------------
-# Global style for publication-quality figures
-# ---------------------------------------------------------------------------
 plt.rcParams.update({
     "font.family": "serif",
     "font.serif": ["Computer Modern Roman", "DejaVu Serif"],
@@ -87,28 +37,11 @@ COL_HIST = "#4393C3"      # steel blue
 COL_ZERO = "#999999"      # light grey for reference lines
 
 
-# ---------------------------------------------------------------------------
-# Kaplan-Meier machinery
-# ---------------------------------------------------------------------------
+# -------------
+# Kaplan-Meier 
 
 def kaplan_meier_survival(times, events):
-    """
-    Compute the Kaplan-Meier survival function from distinct ordered data.
 
-    Parameters
-    ----------
-    times : array, shape (n,)
-        Ordered observed times (assumed distinct).
-    events : array, shape (n,)
-        Event indicators (1 = event, 0 = censoring).
-
-    Returns
-    -------
-    surv : array, shape (n,)
-        S_hat(t) evaluated at each ordered time (right-continuous version).
-    surv_minus : array, shape (n,)
-        S_hat(t^-) evaluated at each ordered time.
-    """
     n = len(times)
     surv = np.ones(n)
     surv_minus = np.ones(n)
@@ -130,9 +63,8 @@ def km_jump_masses(events, surv_minus):
     return events * surv_minus / rj
 
 
-# ---------------------------------------------------------------------------
+# ---------------------------
 # Score functions for the exponential model
-# ---------------------------------------------------------------------------
 
 def exp_score(t, theta):
     """
@@ -147,10 +79,6 @@ def exp_score(t, theta):
 def compute_U_comp(Y_ord, Delta_ord, theta):
     """
     Completion-induced score U_comp(theta).
-
-    For uncensored observations: phi(Y_j; theta).
-    For censored observations:   sum over later event times j
-        (p_j / S_hat(Y_c)) * phi(Y_j; theta).
     """
     n = len(Y_ord)
     surv, surv_minus = kaplan_meier_survival(Y_ord, Delta_ord)
@@ -192,9 +120,8 @@ def compute_U_ipcw(Y_ord, Delta_ord, theta):
     return total
 
 
-# ---------------------------------------------------------------------------
+# --------
 # Data generation
-# ---------------------------------------------------------------------------
 
 def generate_censored_data(n, theta0, lam_c, rng):
     """
@@ -221,10 +148,6 @@ def check_assumptions(Y_ord, Delta_ord):
     return distinct and last_event
 
 
-# ---------------------------------------------------------------------------
-# Root finding
-# ---------------------------------------------------------------------------
-
 def find_root(score_func, Y_ord, Delta_ord, bracket=(-3, 3)):
     """Find the root of a score function using Brent's method."""
     try:
@@ -235,9 +158,9 @@ def find_root(score_func, Y_ord, Delta_ord, bracket=(-3, 3)):
         return np.nan
 
 
-# ---------------------------------------------------------------------------
+# ----------
 # Figure 1: Score curves and difference (two-panel)
-# ---------------------------------------------------------------------------
+
 
 def make_figure1(Y_ord, Delta_ord, seed_label, outdir="."):
     """Create a two-panel figure: scores overlaid + difference."""
@@ -307,9 +230,8 @@ def make_figure1(Y_ord, Delta_ord, seed_label, outdir="."):
     return max_diff, abs(root_comp - root_ipcw)
 
 
-# ---------------------------------------------------------------------------
+# --------------------------------------
 # Figure 2: Monte Carlo histogram of root differences
-# ---------------------------------------------------------------------------
 
 def make_figure2(n, theta0, lam_c, n_mc, outdir="."):
     """
@@ -380,10 +302,6 @@ def make_figure2(n, theta0, lam_c, n_mc, outdir="."):
     return root_diffs
 
 
-# ---------------------------------------------------------------------------
-# Main
-# ---------------------------------------------------------------------------
-
 def main():
     outdir = "."
     n = 100
@@ -394,7 +312,7 @@ def main():
     print("Score identity verification: PL tail completion = IPCW")
     print("=" * 60)
 
-    # --- Find a representative dataset for Figure 1 ---
+
     print("\nSearching for a representative dataset...")
     rng = np.random.default_rng(42)
     for attempt in range(500):
